@@ -1,0 +1,76 @@
+---
+title: "DenverTravel"
+author: "cyorir"
+date: "September 26, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## City of Denver Travel Expenses
+
+The city of Denver provides data about travel and procurement expenses by the city. These data are available here:
+
+https://www.denvergov.org/opendata/dataset/city-and-county-of-denver-procurement-and-travel
+
+At present (September 2018), data from 2012 to 2017 are provided. We can see tht the maximum expenditure was $3907.80 for 2012.
+
+```{r travel_2012}
+library(openxlsx)
+data_2012 <- read.xlsx("TravelCard_2012.xlsx")
+summary(data_2012$Transaction.Amount)
+```
+
+We can pull in data from each year and see how the maximum expenditure has varied.
+
+```{r travel_max}
+data_2013 <- read.xlsx("TravelCard_2013.xlsx")
+data_2014 <- read.xlsx("TravelCard_2014.xlsx")
+data_2015 <- read.xlsx("TravelCard_2015.xlsx")
+data_2016 <- read.xlsx("TravelCard_2016.xlsx")
+data_2017 <- read.xlsx("TravelCard_2017.xlsx")
+ta_max <- data.frame(year = c("2012"), max_expenditure = c(max(data_2012$Transaction.Amount)), stringsAsFactors = FALSE)
+ta_max <- rbind(ta_max, c(year = "2013", max(data_2013$Transaction.Amount)))
+ta_max <- rbind(ta_max, c(year = "2014", max(data_2014$Transaction.Amount)))
+ta_max <- rbind(ta_max, c(year = "2015", max(data_2015$Transaction.Amount)))
+ta_max <- rbind(ta_max, c(year = "2016", max(data_2016$Transaction.Amount)))
+ta_max <- rbind(ta_max, c(year = "2017", max(data_2017$Transaction.Amount)))
+ta_max
+```
+
+Let's combine the data from each year. In order to make use of the transaction dates, they must be converted to a standard format. The data for 2015 are particularly tricky, since that is when the dates switch from excel format to m/d/Y format. A similar method would be necessary to use the Payment.Date field.
+
+```{r travel_combine}
+library(lubridate)
+library(janitor)
+library(dplyr)
+data_cols <- colnames(data_2017)
+colnames(data_2012) <- data_cols
+colnames(data_2013) <- data_cols
+colnames(data_2014) <- data_cols
+colnames(data_2015) <- data_cols
+data_2012_clean <- data_2012 %>% mutate(Transaction.Date = ymd(excel_numeric_to_date(as.numeric(Transaction.Date))))
+data_2013_clean <- data_2013 %>% mutate(Transaction.Date = ymd(excel_numeric_to_date(as.numeric(Transaction.Date))))
+data_2014_clean <- data_2014 %>% mutate(Transaction.Date = ymd(excel_numeric_to_date(as.numeric(Transaction.Date))))
+data_2015_cleanA <- data_2015 %>% filter(!grepl("/",Transaction.Date)) %>% mutate(Transaction.Date = ymd(excel_numeric_to_date(as.numeric(Transaction.Date))))
+data_2015_cleanB <- data_2015 %>% filter(grepl("/",Transaction.Date)) %>% mutate(Transaction.Date = mdy(Transaction.Date))
+data_2015_clean <- rbind(data_2015_cleanA, data_2015_cleanB)
+data_2016_clean <- data_2016 %>% mutate(Transaction.Date = mdy(Transaction.Date))
+data_2017_clean <- data_2017 %>% mutate(Transaction.Date = mdy(Transaction.Date))
+data_temp <- rbind(data_2012_clean,data_2013_clean)
+data_temp2 <- rbind(data_2014_clean,data_2015_clean)
+data_temp3 <- rbind(data_2016_clean,data_2017_clean)
+data_temp <- rbind(data_temp, data_temp2)
+data_all <- rbind(data_temp, data_temp3)
+summary(data_all$Transaction.Date)
+```
+
+With the data combined, the transaction amount can be plotted over time.
+
+```{r travel_plot}
+library(ggplot2)
+ggplot(data = data_all, aes(x=Transaction.Date,y=Transaction.Amount)) +
+  geom_point(alpha = 0.02)
+```

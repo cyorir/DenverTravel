@@ -1,2 +1,3 @@
 # DenverTravel
-a look at the city of denver's travel expenses
+
+A look at the city of Denver's travel expense data, available from Denver's Open Data Catalog.
