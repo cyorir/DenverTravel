@@ -18,7 +18,7 @@ https://www.denvergov.org/opendata/dataset/city-and-county-of-denver-procurement
 At present (September 2018), data from 2012 to 2017 are provided. We can see tht the maximum expenditure was $3907.80 for 2012.
 
 ```{r travel_2012}
-library(openxlsx)
+suppressPackageStartupMessages(library(openxlsx))
 data_2012 <- read.xlsx("TravelCard_2012.xlsx")
 summary(data_2012$Transaction.Amount)
 ```
@@ -43,9 +43,9 @@ ta_max
 Let's combine the data from each year. In order to make use of the transaction dates, they must be converted to a standard format. The data for 2015 are particularly tricky, since that is when the dates switch from excel format to m/d/Y format. A similar method would be necessary to use the Payment.Date field.
 
 ```{r travel_combine}
-library(lubridate)
-library(janitor)
-library(dplyr)
+suppressPackageStartupMessages(library(lubridate))
+suppressPackageStartupMessages(library(janitor))
+suppressPackageStartupMessages(library(dplyr))
 data_cols <- colnames(data_2017)
 colnames(data_2012) <- data_cols
 colnames(data_2013) <- data_cols
@@ -70,7 +70,25 @@ summary(data_all$Transaction.Date)
 With the data combined, the transaction amount can be plotted over time.
 
 ```{r travel_plot}
-library(ggplot2)
+suppressPackageStartupMessages(library(ggplot2))
 ggplot(data = data_all, aes(x=Transaction.Date,y=Transaction.Amount)) +
   geom_point(alpha = 0.02)
+```
+
+We can check to see where the most money has been spent.
+
+```{r travel_merchants}
+totalSpent <- data_all %>% group_by(Merchant.Name) %>%
+  summarise(TotalSpent = sum(Transaction.Amount)) %>%
+  arrange(desc(TotalSpent))
+head(totalSpent)
+```
+
+We can also check which which departments are spending the most on travel.
+
+```{r travel_merchants}
+totalSpent <- data_all %>% group_by(Program.Area) %>%
+  summarise(TotalSpent = sum(Transaction.Amount)) %>%
+  arrange(desc(TotalSpent))
+head(totalSpent)
 ```
