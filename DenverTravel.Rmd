@@ -86,7 +86,7 @@ head(totalSpent)
 
 We can also check which which departments are spending the most on travel.
 
-```{r travel_merchants}
+```{r travel_programs}
 totalSpent <- data_all %>% group_by(Program.Area) %>%
   summarise(TotalSpent = sum(Transaction.Amount)) %>%
   arrange(desc(TotalSpent))
